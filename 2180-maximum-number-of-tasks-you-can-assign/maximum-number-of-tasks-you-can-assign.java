@@ -1,53 +1,46 @@
+
 class Solution {
     public int maxTaskAssign(int[] tasks, int[] workers, int pills, int strength) {
         Arrays.sort(tasks);
         Arrays.sort(workers);
-        int low=0;
-        int high=Math.min(tasks.length,workers.length);
-        while(low<high){
-            int mid=(low+high+1)/2;
-            if(assign(tasks,workers,pills,strength,mid)){
-                low=mid;
-            }
-            else{
-                high=mid-1;
+        int low = 0, high = Math.min(tasks.length, workers.length);
+
+        while (low < high) {
+            int mid = (low + high + 1) / 2;
+            if (canAssign(tasks, workers, pills, strength, mid)) {
+                low = mid;
+            } else {
+                high = mid - 1;
             }
         }
+
         return low;
     }
-    private boolean assign(int[]tasks,int[] workers, int pills, int strength,int k){
-          if (k == 0) return true;
-        if (k > workers.length) return false;
 
-        TreeMap<Integer, Integer> availableWorkers = new TreeMap<>();
-        for (int i = workers.length - k; i < workers.length; i++) {
-            availableWorkers.put(workers[i], availableWorkers.getOrDefault(workers[i], 0) + 1);
-        }
+    private boolean canAssign(int[] tasks, int[] workers, int pills, int strength, int taskCount) {
+        Deque<Integer> boosted = new ArrayDeque<>();
+        int w = workers.length - 1;
+        int freePills = pills;
 
-        int usedPills = 0;
-        for (int i = k - 1; i >= 0; i--) {
-            int task = tasks[i];
+        for (int t = taskCount - 1; t >= 0; t--) {
+            int task = tasks[t];
 
-            Integer key = availableWorkers.floorKey(Integer.MAX_VALUE);
-            if (key != null && key >= task) {
-                decrementCount(availableWorkers, key);
+            if (!boosted.isEmpty() && boosted.peekFirst() >= task) {
+                boosted.pollFirst();
+            } else if (w >= 0 && workers[w] >= task) {
+                w--;
             } else {
-                Integer boosted = availableWorkers.ceilingKey(task - strength);
-                if (boosted == null || usedPills >= pills) return false;
-                decrementCount(availableWorkers, boosted);
-                usedPills++;
+                while (w >= 0 && workers[w] + strength >= task) {
+                    boosted.addLast(workers[w--]);
+                }
+                if (boosted.isEmpty() || freePills == 0) {
+                    return false;
+                }
+                boosted.pollLast();
+                freePills--;
             }
         }
 
         return true;
     }
-
-    private void decrementCount(TreeMap<Integer, Integer> map, int key) {
-        if (map.get(key) == 1) {
-            map.remove(key);
-        } else {
-            map.put(key, map.get(key) - 1);
-        }
-    }
-
-    }
+}
